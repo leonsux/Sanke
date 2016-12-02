@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<link rel="shortcut icon" href="Favicon.ico" />
+	<meta charset="utf-8">
+	<title>贪吃蛇</title>
+</head>
+<body onload="bgm()">
+	<div align="center">
+		<h1>贪吃蛇</h1>
+		<p>方向键移动，空格暂停</p>
+	</div>
+	<div align="center">
+		<canvas style="background-color: black" width="500" height="500" id="myCanvas" class="myCanvas">
+				
+		</canvas>
+	</div>
+	<audio src="bgm.mp3" hidden="true" autoplay="autoplay" loop="true">	</audio>
+	<script type="text/javascript">
+
+		var au = document.createElement("audio");
+		au.preload="auto";
+		au.src = "eat.mp3";
+		function playSound() {
+			au.play();
+		}
+
+		if (confirm("Are you ready?") == 1){
+		var myCanvas = document.getElementById("myCanvas");
+		var cxt = myCanvas.getContext("2d");
+		cxt.clearRect(0,0,500,500);
+		cxt.strokeStyle = "red";
+		var flag = true;
+		var pause = true;
+		var stop;
+		//Ëæ»úÑÕÉ«
+		function randomColor(){
+			return '#'+('00000'+(Math.random()*0x1000000<<0).toString(16)).substr(-6); 
+		}
+		//³õÊ¼»¯Éß
+		function Node(x, y, dir, c) { //Éí×Ó½Úµã
+			this.x = x;            
+			this.y = y;
+			this.dir = dir;		  //·½Ïò
+			this.c = c;           //ÑÕÉ«
+		}
+		var Snake = new Array(6);  //½ÚµãÊý×é
+		for (var i = 0; i < Snake.length; i++) {
+			Snake[i] = new Node(4+i, 10, 1, randomColor());
+		}
+		//Ê³Îï
+		function Food(x, y,c) {
+			this.x = x;
+			this.y = y;
+			this.c = c;		//ÑÕÉ«
+		}
+		var food = new Food(15,15,randomColor());
+		//»­Ê³Îï
+		function drawFood() {
+			cxt.fillStyle = food.c;
+			cxt.beginPath();
+			//cxt.rect(food.x*20, food.y*20, 20, 20);//·½ÐÎÊ³Îï
+			cxt.arc(food.x*20, food.y*20, 10, 0, 2 * Math.PI, true);//Ô²ÐÎÊ³Îï
+			cxt.closePath();
+			cxt.fill();
+		}
+		//²úÉúËæ»úÊ³Îï
+		function proFood() { //0~1 0~25
+			var fx = Math.ceil(Math.random()*24);
+			var fy = Math.ceil(Math.random()*24);
+			for (var i = 0; i < Snake.length; i++) {
+				if (Snake[i].x == fx && Snake[i].y == fy) {
+					fx = Math.ceil(Math.random()*24);
+					fy = Math.ceil(Math.random()*24);
+				}
+			}
+			food = new Food(fx, fy, randomColor());
+			drawFood(food);
+		}
+		//»­Éß
+		function drawSnake(){
+			cxt.clearRect(0,0,500,500);
+			//cxt.strokeStyle = "#D1EEEE";
+			for (var i = 0; i < Snake.length; i++) {
+				cxt.fillStyle = Snake[i].c;
+				// if (i == Snake.length - 1) {
+				// 	cxt.fillStyle = "red";
+				// }
+				cxt.beginPath();
+				//cxt.rect(Snake[i].x*20, Snake[i].y*20, 20, 20);//·½ÐÎÉß
+				cxt.arc(Snake[i].x*20, Snake[i].y*20, 10, 0, 2 * Math.PI, true)//Ô²ÐÎÉß
+				cxt.closePath();
+				cxt.fill();
+			}
+			var head = Snake[Snake.length-1];
+			var tail = Snake[0];
+			if (head.x == food.x && head.y == food.y) {
+				playSound();
+				var newSnake = [];
+				for (var i = 1; i <= Snake.length; i++) {
+					newSnake[i] = Snake[i-1];
+				}
+				var node = new Node(tail.x, tail.y, tail.dir, food.c);
+				switch (tail.dir) { 
+					case -1: node.x++; break;
+					case -2: node.y++; break;
+					case 1: node.x--; break;
+					case 2: node.y--; break;
+				}
+				newSnake[0] = node;
+				Snake = newSnake;
+				//³Ôµ½Á¢¼´ÖØ»­
+				for (var i = 0; i < Snake.length; i++) {
+					cxt.fillStyle = Snake[i].c;
+					cxt.beginPath();
+					//cxt.rect(Snake[i].x*20, Snake[i].y*20, 20, 20);
+					cxt.arc(Snake[i].x*20, Snake[i].y*20, 10, 0, 2 * Math.PI, true)//Ô²ÐÎÉß
+					cxt.closePath();
+					cxt.fill();
+				}
+				proFood();
+			}
+			drawFood();
+		}
+		
+		//ÒÆ¶¯
+		function move(dir){
+			var head = Snake[Snake.length - 1];
+			var newSnake = [];
+			var newHead = new Node(head.x, head.y, head.dir, head.c);
+			for (var i = 0; i < Snake.length-1; i++) {
+				var temp = new Node(Snake[i+1].x, Snake[i+1].y, Snake[i+1].dir, Snake[i].c);
+				newSnake[i] = temp;
+			}
+			newHead.dir = dir;
+			switch (dir) {
+				case -1: newHead.x--; break;
+				case -2: newHead.y--; break;
+				case 1: newHead.x++; break;
+				case 2: newHead.y++; break;
+			}
+			//×²µ½Ç½
+			if (newHead.x<1||newHead.y<1||newHead.x>24||newHead.y>24) {
+				flag = false;
+				return;
+			}
+			//×²µ½Éí×Ó
+			for (var i = 0; i < Snake.length; i++) {
+				if (Snake[i].x == newHead.x && Snake[i].y == newHead.y) {
+					flag = false;
+					return;
+				} 
+			}
+			newSnake[Snake.length-1] = newHead;
+			Snake = newSnake;
+			drawSnake();
+		}
+		document.onkeydown = function(event){
+			var key = event.keyCode;
+			if (key == 32) {//°´ÏÂ¿Õ¸ñÔÝÍ£
+				if (pause) {
+					pause = false; 
+					clearInterval(stop);
+					return ;
+				} else {
+					stop = setInterval(moveClock,100);
+					pause = true;
+				}
+			}
+			if (!flag || !pause) {return;}//ËÀÁË»òÕßÔÝÍ£
+			var dir;
+			switch(event.keyCode){
+				case 37: dir = -1; break;
+				case 38: dir = -2; break;
+				case 39: dir = 1; break;
+				case 40: dir = 2; break;
+			}
+
+			if (dir == null) {return;}//°´ÏÂÎÞ¹Ø¼ü
+			var head = Snake[Snake.length - 1];
+			if (head.dir + dir == 0) {return;}//°´ÏÂÓëµ±Ç°·½Ïò³åÍ»µÄ¼ü
+			if (dir == Snake[Snake.length-1].dir) {
+				move(dir);
+			} else {
+				var temp = new Node(Snake[Snake.length-1].x, Snake[Snake.length-1].y, dir, Snake[Snake.length-1].c);
+				Snake[Snake.length-1] = temp;
+			}
+			//Snake[Snake.length-1].dir = dir; 
+		}
+		function moveClock() {
+			if (flag) {
+				move(Snake[Snake.length-1].dir);
+			} else {
+				clearInterval(stop);
+				alert("you died!");
+			}
+		}
+		drawSnake();
+		stop = setInterval(moveClock,100);
+	}
+	</script>
+</body>
+</html>
